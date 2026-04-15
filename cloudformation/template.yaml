@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Infraestructura para Crypto Tracker - EC2 y S3
+
+Resources:
+  # S3 Bucket para logs o backups
+  CryptoAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "crypto-tracker-logs-${AWS::AccountId}"
+
+  CryptoSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permitir trafico HTTP y SSH
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0 # Temporal
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+
+  # Instancia EC2
+  CryptoServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-098e39bafa7e7303d
+      SecurityGroupIds:
+        - !Ref CryptoSG
+      Tags:
+        - Key: Name
+          Value: CryptoTrackerServer
