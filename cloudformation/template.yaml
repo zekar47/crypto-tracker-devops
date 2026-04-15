@@ -26,7 +26,7 @@ Resources:
           ToPort: 3000
           CidrIp: 0.0.0.0/0
 
-  # Instancia EC2
+          # Instancia EC2
   CryptoServer:
     Type: AWS::EC2::Instance
     Properties:
@@ -34,6 +34,33 @@ Resources:
       ImageId: ami-098e39bafa7e7303d
       SecurityGroupIds:
         - !Ref CryptoSG
+
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/sh
+          # Actualizar e instalar dependencias
+          dnf update -y
+          dnf install -y git docker
+
+          # Iniciar Docker y permisos
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ec2-user
+
+          # Instalar Docker Compose (V2)
+          mkdir -p /usr/local/lib/docker/cli-plugins
+          curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+          chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+          # Clonar repositorio y configurar Cron
+          cd /home/ec2-user
+          git clone https://github.com/zekar47/crypto-tracker-devops.git
+          chown -R ec2-user:ec2-user crypto-tracker-devops
+
+          # Configurar el cron para el usuario ec2-user
+          # Hora temporal, luego revisaré correctamente las diferencias de timezones
+          echo "00 08 * * * /home/ec2-user/crypto-tracker-devops/scripts/start_app.sh" >> /var/spool/cron/ec2-user
+          echo "00 20 * * * /home/ec2-user/crypto-tracker-devops/scripts/stop_app.sh" >> /var/spool/cron/ec2-user
       Tags:
         - Key: Name
           Value: CryptoTrackerServer
