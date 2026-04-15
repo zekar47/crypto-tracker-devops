@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Crypto Tracker DevOps</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>🚀 {{ title }}</h1>
+        <button @click="checkBackend">Consultar API</button>
+        <p>Respuesta del Servidor: <strong>{{ status }}</strong></p>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+        createApp({
+            data() {
+                return {
+                    title: 'Crypto Tracker',
+                    status: 'Esperando consulta...'
+                }
+            },
+            methods: {
+                async checkBackend() {
+                    try {
+                        const res = await fetch('http://localhost:3000/api/status');
+                        const data = await res.json();
+                        this.status = data.status;
+                    } catch (err) {
+                        this.status = 'Error: No se pudo conectar con el Backend';
+                    }
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
