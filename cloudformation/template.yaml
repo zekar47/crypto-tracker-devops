@@ -31,6 +31,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
+      KeyName: vockey
       ImageId: ami-098e39bafa7e7303d
       SecurityGroupIds:
         - !Ref CryptoSG
