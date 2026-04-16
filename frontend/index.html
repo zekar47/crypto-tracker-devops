@@ -1,73 +1,129 @@
-<!DOCTYPE html5>
+<!DOCTYPE html>
 <html lang="es">
 	<head>
 		<meta charset="UTF-8">
-		<title>Crypto Tracker DevOps</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Crypto Monitor Pro</title>
 		<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+		<style>
+			.main-container { max-width: 800px; margin: 40px auto; }
+			.price-tag { font-weight: bold; color: #00d1b2; }
+		</style>
 	</head>
 	<body>
-		<div id="app">
-			<h1>🚀 {{ title }}</h1>
-			<div style="margin-bottom: 20px; border: 1px solid #ccc; padding: 10px;">
-				<h3>Estado del Sistema</h3>
-				<button @click="checkBackend">Consultar API</button>
-				<p>Respuesta: <strong>{{ status }}</strong></p>
-			</div>
+		<div id="app" class="main-container">
+			<div class="card">
+				<header class="card-header has-background-primary">
+					<p class="card-header-title has-text-white">🚀 Crypto Tracker DevOps v2.0</p>
+					<div class="p-2">
+						<span class="tag" :class="status === 'Online' ? 'is-success' : 'is-danger'">{{ status }}</span>
+					</div>
+				</header>
 
-			<div style="border: 1px solid #ccc; padding: 10px;">
-				<h3>Registrar Criptomoneda</h3>
-				<input v-model="newCrypto.symbol" placeholder="Símbolo (ej: BTC)">
-				<input v-model.number="newCrypto.price" type="number" placeholder="Precio (USD)">
-				<button @click="saveCrypto">Guardar en MongoDB</button>
-				<p v-if="dbMessage">{{ dbMessage }}</p>
+				<div class="card-content">
+					<div class="field has-addons">
+						<div class="control is-expanded">
+							<input class="input" v-model="coinSearch" placeholder="Nombre (ej: bitcoin, solana, cardano)" @keyup.enter="trackCoin">
+						</div>
+						<div class="control">
+							<button class="button is-primary" @click="trackCoin" :disabled="loading">
+								{{ loading ? 'Buscando...' : 'Track' }}
+							</button>
+						</div>
+					</div>
+
+					<article v-if="message" class="message" :class="messageType">
+						<div class="message-body">{{ message }}</div>
+					</article>
+
+					<hr>
+
+					<h3 class="subtitle">Últimos Registros (MongoDB)</h3>
+					<table class="table is-fullwidth is-hoverable">
+						<thead>
+							<tr>
+								<th>Moneda</th>
+								<th>Precio (USD)</th>
+								<th>Fecha</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr v-for="item in history" :key="item._id">
+								<td><span class="tag is-uppercase is-light">{{ item.symbol }}</span></td>
+								<td class="price-tag">${{ item.price.toLocaleString() }}</td>
+								<td class="is-size-7">{{ formatTime(item.timestamp) }}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</div>
+
 		<script>
-			const { createApp } = Vue
+			const { createApp } = Vue;
+			const API_BASE = `http://${window.location.hostname}:3000/api`;
+			
 			createApp({
 				data() {
 					return {
-						title: 'Crypto Tracker DevOps',
-						status: 'Esperando consulta...',
-						dbMessage: '',
-						newCrypto: {
-							symbol: '',
-							price: null
-						}
+						coinSearch: '',
+						status: 'Checking...',
+						loading: false,
+						history: [],
+						message: '',
+						messageType: 'is-info'
 					}
 					},
-					methods: {
-						async checkBackend() {
-							try {
-								const res = await fetch(`http://${window.location.hostname}:3000/api/status`);
-								const data = await res.json();
-								this.status = data.status;
-								} catch (err) {
-									this.status = 'Error: No se pudo conectar';
-								}
-								},
-								// NUEVO MÉTODO PARA GUARDAR
-								async saveCrypto() {
-									if (!this.newCrypto.symbol || !this.newCrypto.price) {
-										this.dbMessage = 'Por favor llena ambos campos';
-										return;
-									}
-									try {
-										const res = await fetch(`http://${window.location.hostname}:3000/api/save`, {
-											method: 'POST',
-											headers: { 'Content-Type': 'application/json' },
-											body: JSON.stringify(this.newCrypto)
-											});
-											const data = await res.json();
-											this.dbMessage = '✅ ' + data.message;
-											this.newCrypto.symbol = '';
-											this.newCrypto.price = null;
-											} catch (err) {
-												this.dbMessage = '❌ Error al guardar en base de datos';
-											}
-										}
-									}
-									}).mount('#app')
+					mounted() {
+						this.updateAll();
+						setInterval(this.updateAll, 20000); // Actualización suave
+						},
+						methods: {
+							async updateAll() {
+								try {
+									const sRes = await fetch(`${API_BASE}/status`);
+									const sData = await sRes.json();
+									this.status = sData.status;
+									
+									const hRes = await fetch(`${API_BASE}/history`);
+									this.history = await hRes.json();
+									} catch (e) { this.status = 'Offline'; }
+									},
+									async trackCoin() {
+										if (!this.coinSearch) return;
+										this.loading = true;
+										this.message = '';
+										
+										try {
+											const res = await fetch(`${API_BASE}/track`, {
+												method: 'POST',
+												headers: { 'Content-Type': 'application/json' },
+												body: JSON.stringify({ coin: this.coinSearch.toLowerCase() })
+												});
+												const data = await res.json();
+												
+												if (!res.ok) {
+													this.message = data.error;
+													this.messageType = 'is-danger';
+													} else {
+														this.message = `¡Éxito! ${data.symbol} actualizado.`;
+														this.messageType = 'is-success';
+														this.coinSearch = '';
+														await this.updateAll();
+													}
+													} catch (e) {
+														this.message = "Error de conexión con el servidor";
+														this.messageType = "is-warning";
+														} finally {
+															this.loading = false;
+														}
+														},
+														formatTime(ts) {
+															return new Date(ts).toLocaleTimeString();
+														}
+													}
+													}).mount('#app');
 		</script>
 	</body>
 </html>

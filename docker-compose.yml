@@ -1,7 +1,10 @@
 services:
   db: 
-    image: mongo:latest
+    image: mongo:4.4
     container_name: mongodb_crypto
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=cryptodb
     ports:
       - "27017:27017"
     volumes:
