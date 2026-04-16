@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -x
+
 LOG_FILE="$(dirname "$0")/logs"
 DATE="date +%F/%R:%S"
 
