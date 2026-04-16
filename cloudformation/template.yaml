@@ -30,6 +30,7 @@ Resources:
   CryptoServer:
     Type: AWS::EC2::Instance
     Properties:
+      IamInstanceProfile: "LabInstanceProfile"
       InstanceType: t2.micro
       KeyName: vockey
       ImageId: ami-0ec10929233384c7f
@@ -40,8 +41,11 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/sh
           # 1. Actualizar e instalar Docker (Ubuntu ya trae docker-compose v2 en sus repos)
+          echo "Iniciando provisionamiento..."
           apt-get update -y
-          apt-get install -y docker.io docker-compose-v2 git
+          apt-get install -y docker.io docker-compose-v2 git unzip
+
+          snap install aws-cli --classic
 
           # 2. Permisos y servicios
           systemctl start docker
@@ -50,11 +54,8 @@ Resources:
 
           # 3. Clonar repositorio
           cd /home/ubuntu
+          rm -rf crypto-tracker-devops
           git clone https://github.com/zekar47/crypto-tracker-devops.git
-          
-          # 4. Automatizar el script de deploy (Descomentar git pull)
-          # sed -i 's/# git pull/git pull/' /home/ubuntu/crypto-tracker-devops/scripts/deploy.sh
-          # mala idea
           
           # 5. Ajustar dueños
           chown -R ubuntu:ubuntu /home/ubuntu/crypto-tracker-devops
