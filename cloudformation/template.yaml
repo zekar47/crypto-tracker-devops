@@ -63,6 +63,7 @@ Resources:
           # 6. Configurar Cron (En Ubuntu, el directorio de crontabs es distinto)
           echo "00 08 * * * /home/ubuntu/crypto-tracker-devops/scripts/start_app.sh" >> /var/spool/cron/crontabs/ubuntu
           echo "00 20 * * * /home/ubuntu/crypto-tracker-devops/scripts/stop_app.sh" >> /var/spool/cron/crontabs/ubuntu
+          echo "00 00 * * * /home/ubuntu/crypto-tracker-devops/scripts/backup_log.sh >> /home/ubuntu/backup_history.log 2>&1" >> /var/spool/cron/crontabs/ubuntu
           chown ubuntu:crontab /var/spool/cron/crontabs/ubuntu
           chmod 600 /var/spool/cron/crontabs/ubuntu
       Tags:
