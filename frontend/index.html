@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html5>
 <html lang="es">
 	<head>
 		<meta charset="UTF-8">
@@ -8,17 +8,32 @@
 	<body>
 		<div id="app">
 			<h1>🚀 {{ title }}</h1>
-			<button @click="checkBackend">Consultar API</button>
-			<p>Respuesta del Servidor: <strong>{{ status }}</strong></p>
-		</div>
+			<div style="margin-bottom: 20px; border: 1px solid #ccc; padding: 10px;">
+				<h3>Estado del Sistema</h3>
+				<button @click="checkBackend">Consultar API</button>
+				<p>Respuesta: <strong>{{ status }}</strong></p>
+			</div>
 
+			<div style="border: 1px solid #ccc; padding: 10px;">
+				<h3>Registrar Criptomoneda</h3>
+				<input v-model="newCrypto.symbol" placeholder="Símbolo (ej: BTC)">
+				<input v-model.number="newCrypto.price" type="number" placeholder="Precio (USD)">
+				<button @click="saveCrypto">Guardar en MongoDB</button>
+				<p v-if="dbMessage">{{ dbMessage }}</p>
+			</div>
+		</div>
 		<script>
 			const { createApp } = Vue
 			createApp({
 				data() {
 					return {
-						title: 'Crypto Tracker',
-						status: 'Esperando consulta...'
+						title: 'Crypto Tracker DevOps',
+						status: 'Esperando consulta...',
+						dbMessage: '',
+						newCrypto: {
+							symbol: '',
+							price: null
+						}
 					}
 					},
 					methods: {
@@ -28,11 +43,31 @@
 								const data = await res.json();
 								this.status = data.status;
 								} catch (err) {
-									this.status = 'Error: No se pudo conectar con el Backend';
+									this.status = 'Error: No se pudo conectar';
 								}
-							}
-						}
-						}).mount('#app')
+								},
+								// NUEVO MÉTODO PARA GUARDAR
+								async saveCrypto() {
+									if (!this.newCrypto.symbol || !this.newCrypto.price) {
+										this.dbMessage = 'Por favor llena ambos campos';
+										return;
+									}
+									try {
+										const res = await fetch(`http://${window.location.hostname}:3000/api/save`, {
+											method: 'POST',
+											headers: { 'Content-Type': 'application/json' },
+											body: JSON.stringify(this.newCrypto)
+											});
+											const data = await res.json();
+											this.dbMessage = '✅ ' + data.message;
+											this.newCrypto.symbol = '';
+											this.newCrypto.price = null;
+											} catch (err) {
+												this.dbMessage = '❌ Error al guardar en base de datos';
+											}
+										}
+									}
+									}).mount('#app')
 		</script>
 	</body>
 </html>
