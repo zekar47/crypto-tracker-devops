@@ -14,6 +14,7 @@ if [ -f "$LOG_SOURCE" ]; then
 
     if [ $? -eq 0 ]; then
         echo "✅ Backup exitoso: app_$TIMESTAMP.log"
+        rm -f "$LOG_SOURCE"
     else
         echo "❌ Error al subir a S3"
     fi
