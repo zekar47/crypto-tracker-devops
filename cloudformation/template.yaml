@@ -53,7 +53,8 @@ Resources:
           git clone https://github.com/zekar47/crypto-tracker-devops.git
           
           # 4. Automatizar el script de deploy (Descomentar git pull)
-          sed -i 's/# git pull/git pull/' /home/ubuntu/crypto-tracker-devops/scripts/deploy.sh
+          # sed -i 's/# git pull/git pull/' /home/ubuntu/crypto-tracker-devops/scripts/deploy.sh
+          # mala idea
           
           # 5. Ajustar dueños
           chown -R ubuntu:ubuntu /home/ubuntu/crypto-tracker-devops
