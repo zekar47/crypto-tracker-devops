@@ -1,12 +1,23 @@
 services:
+  db: 
+    image: mongo:latest
+    container_name: mongodb_crypto
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
   backend:
     build: ./backend
     ports:
       - "3000:3000"
     volumes:
       - ./backend/logs:/app/logs
+    depends_on:
+      - db
     environment:
       - NODE_ENV=production
+      - MONGO_URL=mongodb://db:27017/cryptodb
 
   frontend:
     build: ./frontend
@@ -14,3 +25,6 @@ services:
       - "8080:80"
     depends_on:
       - backend
+
+volumes:
+  mongodb_data:
