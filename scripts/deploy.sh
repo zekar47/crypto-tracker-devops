@@ -1,7 +1,13 @@
 #!/bin/sh
-echo "Iniciando despliegue..."
-git pull origin main # Se activará en la EC2
-docker compose down &&
-  docker compose up --build -d &&
-  echo "Despliegue finalizado con éxito" ||
-  echo "Despliegue fallido."
+
+LOG_FILE="$(dirname "$0")/logs"
+DATE="date +%F/%R:%S"
+
+{
+    echo "[$($DATE)]" "Iniciando despliegue..."
+    git pull origin main # Se activará en la EC2
+    docker compose down &&
+        docker compose up --build -d &&
+        echo "[$($DATE)]" "Despliegue finalizado con éxito" ||
+        echo "[$($DATE)]" "Despliegue fallido."
+} 2>&1 | tee -a "$LOG_FILE"

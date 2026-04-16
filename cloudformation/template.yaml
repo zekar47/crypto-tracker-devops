@@ -32,36 +32,37 @@ Resources:
     Properties:
       InstanceType: t2.micro
       KeyName: vockey
-      ImageId: ami-098e39bafa7e7303d
+      ImageId: ami-0ec10929233384c7f
       SecurityGroupIds:
         - !Ref CryptoSG
 
       UserData:
         Fn::Base64: !Sub |
           #!/bin/sh
-          # Actualizar e instalar dependencias
-          dnf update -y
-          dnf install -y git docker
+          # 1. Actualizar e instalar Docker (Ubuntu ya trae docker-compose v2 en sus repos)
+          apt-get update -y
+          apt-get install -y docker.io docker-compose-v2 git
 
-          # Iniciar Docker y permisos
+          # 2. Permisos y servicios
           systemctl start docker
           systemctl enable docker
-          usermod -aG docker ec2-user
+          usermod -aG docker ubuntu
 
-          # Instalar Docker Compose (V2)
-          mkdir -p /usr/local/lib/docker/cli-plugins
-          curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
-          chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-
-          # Clonar repositorio y configurar Cron
-          cd /home/ec2-user
+          # 3. Clonar repositorio
+          cd /home/ubuntu
           git clone https://github.com/zekar47/crypto-tracker-devops.git
-          chown -R ec2-user:ec2-user crypto-tracker-devops
+          
+          # 4. Automatizar el script de deploy (Descomentar git pull)
+          sed -i 's/# git pull/git pull/' /home/ubuntu/crypto-tracker-devops/scripts/deploy.sh
+          
+          # 5. Ajustar dueños
+          chown -R ubuntu:ubuntu /home/ubuntu/crypto-tracker-devops
 
-          # Configurar el cron para el usuario ec2-user
-          # Hora temporal, luego revisaré correctamente las diferencias de timezones
-          echo "00 08 * * * /home/ec2-user/crypto-tracker-devops/scripts/start_app.sh" >> /var/spool/cron/ec2-user
-          echo "00 20 * * * /home/ec2-user/crypto-tracker-devops/scripts/stop_app.sh" >> /var/spool/cron/ec2-user
+          # 6. Configurar Cron (En Ubuntu, el directorio de crontabs es distinto)
+          echo "00 08 * * * /home/ubuntu/crypto-tracker-devops/scripts/start_app.sh" >> /var/spool/cron/crontabs/ubuntu
+          echo "00 20 * * * /home/ubuntu/crypto-tracker-devops/scripts/stop_app.sh" >> /var/spool/cron/crontabs/ubuntu
+          chown ubuntu:crontab /var/spool/cron/crontabs/ubuntu
+          chmod 600 /var/spool/cron/crontabs/ubuntu
       Tags:
         - Key: Name
           Value: CryptoTrackerServer
